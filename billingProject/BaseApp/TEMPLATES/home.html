@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="no_bill">
+    
+        <button class="btn " style="color: black;float: right;margin-right: 10px;" type="button"><a href="/signOut" style="color: black;
+            text-decoration: none;">Logout</a></button>
+
+    <button class="btn btn-primary" style="color: white;float: right;" type="button"><a href="/add_product" style="color: white;
+        text-decoration: none;">Add Product</a></button>
+
+      
+<button class="btn btn-warning" style="color: white;float: right;margin-right: 10px;" type="button"><a onclick="generate_bill()" style="color: white;
+    text-decoration: none;">Generate Bill</a></button>
+
+
+    
+    <table  class="table table-striped">
+        
+        <tr>
+           
+            <th>Name</th>
+            <th>Price</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Action</th>
+        </tr>
+        <tbody>
+            {% for data in products %}
+            <tr>
+                <td><input type="checkbox"  class="selectRow" value="{{data.id}}"></td>
+                <td>{{data.name}}</td>
+                <td>{{data.price}}</td>
+                <td>{{data.description}}</td>
+                <td>{{data.qty}}</td>
+                <td><a href="/update/{{data.id}}">Update</a> <a onclick="delete_item('{{data.id}}')">Delete</a></td>
+              
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    <div id="bill" style="display: none;">
+        <table  class="table table-striped">
+        
+            <tr>
+               
+                <th>Name</th>
+                <th>Price</th>
+                <th>Description</th>
+                
+                
+            </tr>
+            <tbody id="tbody_backend">
+              
+               
+               
+            </tbody>
+            <tr>
+                <th colspan="3" style="text-align: center;"> Total Amount : <span id="total_amount"></span> </th>
+            
+            </tr>
+        </table>
+        <button id="button_exclude" class="btn btn-warning" style="float: right;" onclick="bill_print()">Print Bill</button>
+    </div>
+</body>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script>
+
+            function delete_item(id){
+                // Display confirmation dialog
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You want to delete this item !",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes',
+                    cancelButtonText: 'No, cancel!',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // User clicked "Yes", proceed with AJAX call
+                        $.ajax({
+                            url: '/delete/'+id, // URL to your API
+                            type: 'GET',
+                            success: function(response){
+                                // Handle successful response
+                                Swal.fire('Success', 'Product Deleted', 'success');
+                                location.reload();
+                            },
+                            error: function(xhr, status, error){
+                                // Handle error
+                                Swal.fire('Error', 'Something went Wrong!', 'error');
+                                location.reload();
+                            }
+                        });
+                    } else if (result.dismiss === Swal.DismissReason.cancel) {
+                        // User clicked "No" or outside the dialog, do nothing
+                        Swal.fire('Cancelled', 'Your action has been cancelled', 'error');
+                    }
+                });
+            };
+  
+
+            function generate_bill(){
+                checkedValues=[]
+                $('.selectRow:checked').each(function(){
+                    checkedValues.push($(this).val());
+                });
+                
+                if(checkedValues==[]){
+                    Swal.fire('warning', 'Please Selct Item from  List', 'error');
+                }
+                else{
+                    $.ajax({
+                            url: '/get_details', // URL to your API
+                            type: 'POST',
+                            data:{"ids":checkedValues},
+                            success: function(response){
+                               $("#no_bill").hide();
+                               $("#bill").show();
+                               $("#tbody_backend").html(response.tbody)
+                               $("#total_amount").html(response.total_cost)
+                            },
+                           
+                        });
+                }
+
+                // console.log(checkedValues)
+            }
+            function bill_print(){
+                $("#button_exclude").hide();
+                print();
+                $("#button_exclude").show();
+            }
+    </script>
+</html>
